@@ -1,0 +1,82 @@
+const axios = require('axios');
+const sharp = require('sharp');
+const stream = require('stream');
+const storage = require('azure-storage');
+const blobService = storage.createBlobService();
+
+module.exports = async function (context, myBlob) {
+    // context.log("JavaScript blob trigger function processed blob \n Blob:", context.bindingData.blobTrigger, "\n Blob Size:", myBlob.length, "Bytes");
+
+    const imageUrl = context.bindingData.uri;
+    const name = context.bindingData.name;
+
+    var predictedPlates;
+    try{
+        predictedPlates = await getLicensePlate(imageUrl);
+        context.log("Prediction Sucessful "+ predictedPlates);
+
+    }catch(err){
+        context.log("Error while predicting Plates " + err);
+        return;
+    }
+
+    const imageWidth = process.env.GLOBAL_WIDTH;
+    const imageHeight = process.env.GLOBAL_HEIGHT;
+
+    const predictedBox = predictedPlates.predictions[0].boundingBox;
+
+    const width = parseInt(imageWidth * predictedBox.width);
+    const height = parseInt(imageHeight * predictedBox.height);
+    const left = parseInt(imageWidth * predictedBox.left);
+    const top = parseInt(imageHeight * predictedBox.top);
+
+
+    await sharp(myBlob).extract({
+        width : width,
+        height : height,
+        left : left,
+        top : top
+    })
+    .toBuffer()
+    .then(buffer => {
+
+        const readStream = stream.PassThrough();
+        readStream.end(buffer);
+
+        blobService.createBlockBlobFromStream(process.env.LICENSE_PLATE_CONTAINER, name, readStream, buffer.length, (err) => {
+            if(err){
+                context.log("Image updation Failed"+ err);
+            }else{
+                context.done();
+            }
+        });
+
+    }).catch(err =>{
+        context.log("error " + err);
+    });
+
+};
+
+function getLicensePlate(imageUrl){
+
+    return new Promise((resolve,reject) => {
+        axios.post(process.env.VISION_API_URL,{
+            Url:imageUrl
+        },{
+            headers : {
+                'Content-Type': 'application/json',
+                "Prediction-Key" : process.env.KEY
+            }
+        }).then(response => {
+
+            var res = response.data;
+            res.predictions.sort(function(a,b){
+                return b.probability - a.probability;
+            });
+            resolve(res);
+    
+        }).catch(err =>{
+            reject(err);
+        });
+    });
+ };

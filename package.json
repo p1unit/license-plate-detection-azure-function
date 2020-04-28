@@ -1,0 +1,19 @@
+{
+  "name": "azure-function",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "azure-storage": "^2.10.3",
+    "sharp": "^0.25.2"
+  },
+  "devDependencies": {},
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
