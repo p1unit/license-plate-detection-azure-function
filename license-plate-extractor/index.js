@@ -5,10 +5,13 @@ const storage = require('azure-storage');
 const blobService = storage.createBlobService();
 
 module.exports = async function (context, myBlob) {
-    // context.log("JavaScript blob trigger function processed blob \n Blob:", context.bindingData.blobTrigger, "\n Blob Size:", myBlob.length, "Bytes");
+    context.log("JavaScript blob trigger function processed blob \n Blob:", context.bindingData.blobTrigger, "\n Blob Size:", myBlob.length, "Bytes");
 
     const imageUrl = context.bindingData.uri;
     const name = context.bindingData.name;
+
+    const GLOBAL_WIDTH = 500;
+    const GLOBAL_HEIGHT = 500;
 
     var predictedPlates;
     try{
@@ -20,8 +23,8 @@ module.exports = async function (context, myBlob) {
         return;
     }
 
-    const imageWidth = process.env.GLOBAL_WIDTH;
-    const imageHeight = process.env.GLOBAL_HEIGHT;
+    const imageWidth = GLOBAL_WIDTH;
+    const imageHeight = GLOBAL_HEIGHT;
 
     const predictedBox = predictedPlates.predictions[0].boundingBox;
 
