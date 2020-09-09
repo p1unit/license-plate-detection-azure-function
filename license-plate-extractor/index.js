@@ -2,6 +2,7 @@ const axios = require('axios');
 const sharp = require('sharp');
 const stream = require('stream');
 const storage = require('azure-storage');
+const { default: Axios } = require('axios');
 const blobService = storage.createBlobService();
 
 module.exports = async function (context, myBlob) {
@@ -50,7 +51,33 @@ module.exports = async function (context, myBlob) {
             if(err){
                 context.log("Image updation Failed"+ err);
             }else{
-                context.done();
+
+                const url = "https://anprimages.blob.core.windows.net/vehicle-plates/"+name;
+
+                const param = {
+                    "url":url
+                }
+
+                axios.post('http://127.0.0.1:8080/api/v1.1/')
+                    .then((response) => {
+                        console.log(response);
+                });
+
+                axios.post('http://127.0.0.1:8080/api/v1.1/addOrUpdate',{
+                    "url":url
+                },{
+                    headers : {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(response => {
+
+                    console.log("OK:" + response);
+                    context.done();
+            
+                }).catch(err =>{
+                    reject("Error:" + err);
+                    context.done();
+                });
             }
         });
 
